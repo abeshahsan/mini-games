@@ -8,6 +8,10 @@ export default function proxy(req: NextRequest) {
 
 	console.log("Middleware - UID:", uid, "Username:", username);
 
+	if (req.nextUrl.pathname == "/") {
+		return NextResponse.redirect(new URL("/games", req.url));
+	}
+
 	// Case 1: username missing → redirect
 	if (!username && req.nextUrl.pathname !== "/set-username") {
 		const url = req.nextUrl.clone();
