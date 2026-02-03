@@ -2,9 +2,21 @@ import { MemoryMatchGameRoom } from "@/src/types";
 
 // In-memory game store for multiplayer state
 // In production, this should be replaced with a database like Redis
-const gameStore = new Map<string, MemoryMatchGameRoom>();
+
+// Use global to persist store across hot reloads in development
+const globalForGameStore = globalThis as unknown as {
+	gameStore: Map<string, MemoryMatchGameRoom> | undefined;
+};
+
+const gameStore = globalForGameStore.gameStore ?? new Map<string, MemoryMatchGameRoom>();
+
+// Preserve the store across hot reloads
+if (process.env.NODE_ENV !== "production") {
+	globalForGameStore.gameStore = gameStore;
+}
 
 export function createGame(gameId: string, hostId: string, hostUsername: string, cards: any[]): MemoryMatchGameRoom {
+	console.log("[Game Store] Creating game:", gameId);
 	const game: MemoryMatchGameRoom = {
 		gameId,
 		cards,
@@ -18,11 +30,14 @@ export function createGame(gameId: string, hostId: string, hostUsername: string,
 	};
 	
 	gameStore.set(gameId, game);
+	console.log("[Game Store] Game created. Store size:", gameStore.size);
 	return game;
 }
 
 export function getGame(gameId: string): MemoryMatchGameRoom | undefined {
-	return gameStore.get(gameId);
+	const game = gameStore.get(gameId);
+	console.log("[Game Store] Get game:", gameId, "Found:", game ? "Yes" : "No", "Store size:", gameStore.size);
+	return game;
 }
 
 export function updateGame(gameId: string, updates: Partial<MemoryMatchGameRoom>): MemoryMatchGameRoom | null {

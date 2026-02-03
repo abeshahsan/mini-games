@@ -74,11 +74,11 @@ export default function MemoryMatchPage() {
 				}
 
 				const { game } = await joinResponse.json();
-				
+
 				if (!game) {
 					throw new Error("No game data received");
 				}
-				
+
 				setGameRoom(game);
 				setCards(game.cards);
 				setMoves(game.moves);
@@ -129,74 +129,108 @@ export default function MemoryMatchPage() {
 				cardId: id,
 				userId: gamer.id,
 			}),
-		}).catch((err) => {
-			console.error("Failed to make move:", err);
-			setError("Failed to make move");
-			setTimeout(() => setError(null), 2000);
-		});
+		})
+			.then((res) => {
+				if (!res.ok) {
+					return res.json().then((data) => {
+						throw new Error(data.error || "Failed to make move");
+					});
+				}
+			})
+			.catch((err) => {
+				console.error("Failed to make move:", err);
+				setError("Failed to make move");
+				setTimeout(() => setError(null), 2000);
+			});
 	};
 
 	// Handle Pusher events
 	useEffect(() => {
+		console.log("[Pusher] Initializing for game:", gameId);
+		
 		const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
 			cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
 			forceTLS: true,
 		});
 
 		const channel = pusherClient.subscribe(`memory-match-${gameId}`);
+		
+		channel.bind("pusher:subscription_succeeded", () => {
+			console.log("[Pusher] Successfully subscribed to channel:", `memory-match-${gameId}`);
+		});
+		
+		channel.bind("pusher:subscription_error", (error: any) => {
+			console.error("[Pusher] Subscription error:", error);
+		});
 
 		// Player joined event
 		channel.bind("player-joined", (data: { player: Player; game: MemoryMatchGameRoom }) => {
+			console.log("[Pusher] Player joined:", data);
 			setGameRoom(data.game);
 		});
 
 		// Game started event
 		channel.bind("game-started", (data: { game: MemoryMatchGameRoom }) => {
+			console.log("[Pusher] Game started:", data);
 			setGameRoom(data.game);
 			setCards(data.game.cards);
 		});
 
-		// Player move event
+		// Card flipped event - update immediately
+		channel.bind("card-flipped", (data: { cardId: number; userId: string; game: MemoryMatchGameRoom }) => {
+			console.log("[Pusher] Card flipped:", data.cardId, "by user:", data.userId);
+			
+			// Update game state
+			setGameRoom(data.game);
+
+			// Immediately show the flipped card
+			setCards([...data.game.cards]);
+		});
+
+		// Match result event - handle after both cards are flipped
 		channel.bind(
-			"player-move",
+			"match-result",
 			(data: {
-				cardId: number;
-				userId: string;
-				game: MemoryMatchGameRoom;
 				matchFound: boolean;
 				shouldSwitchTurn: boolean;
+				game: MemoryMatchGameRoom;
+				firstCardId: number;
+				secondCardId: number;
 			}) => {
+				console.log("[Pusher] Match result:", {
+					matchFound: data.matchFound,
+					firstCard: data.firstCardId,
+					secondCard: data.secondCardId,
+				});
+				
 				const { game, matchFound } = data;
 
 				setGameRoom(game);
 				setMoves(game.moves);
 				setIsMyTurn(game.currentTurn === gamer?.id);
+				setIsProcessing(true);
 
-				// Update cards immediately for the flip
-				setCards(game.cards);
+				if (matchFound) {
+					// Match found - cards stay flipped and matched
+					setTimeout(() => {
+						setCards([...game.cards]);
+						setIsProcessing(false);
 
-				// Handle match or mismatch with delays
-				if (game.flippedCards.length === 0) {
-					setIsProcessing(true);
-
-					if (matchFound) {
-						// Match found - cards stay flipped and matched
-						setTimeout(() => {
-							setCards([...game.cards]);
-							setIsProcessing(false);
-
-							// Check if game is complete
-							if (game.status === "completed") {
-								setIsWon(true);
-							}
-						}, 500);
-					} else {
-						// No match - flip cards back after delay
-						setTimeout(() => {
-							setCards([...game.cards]);
-							setIsProcessing(false);
-						}, 1000);
-					}
+						// Check if game is complete
+						if (game.status === "completed") {
+							setIsWon(true);
+						}
+					}, 500);
+				} else {
+					// No match - flip cards back after delay
+					setTimeout(() => {
+						// Flip the two cards back
+						const updatedCards = [...game.cards];
+						updatedCards[data.firstCardId].isFlipped = false;
+						updatedCards[data.secondCardId].isFlipped = false;
+						setCards(updatedCards);
+						setIsProcessing(false);
+					}, 1000);
 				}
 			},
 		);
