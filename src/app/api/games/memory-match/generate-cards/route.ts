@@ -1,6 +1,6 @@
 const WORDS = ["Apple", "Banana", "Cherry", "Dragonfruit", "Elderberry", "Fig", "Grape", "Honeydew"];
 
-const generateCards = () => {
+export const generateCards = () => {
 	return [...WORDS, ...WORDS]
 		.sort(() => Math.random() - 0.5)
 		.map((word, index) => ({
