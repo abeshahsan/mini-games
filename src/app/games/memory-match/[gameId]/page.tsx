@@ -188,11 +188,11 @@ export default function MemoryMatchPage() {
 					secondCard: data.secondCardId,
 				});
 
-				await new Promise((resolve) => setTimeout(resolve, 1000)); // Small delay for better UX
+				// await new Promise((resolve) => setTimeout(resolve, 1000)); // Small delay for better UX
 
 				const { game, matchFound } = data;
 
-				setGameRoom(game);
+				// setGameRoom(game);
 
 				setIsMyTurn(game.currentTurn === gamer?.id);
 				setIsProcessing(true);
@@ -214,6 +214,8 @@ export default function MemoryMatchPage() {
 						const updatedCards = [...game.cards];
 						updatedCards[data.firstCardId].isFlipped = false;
 						updatedCards[data.secondCardId].isFlipped = false;
+
+						setGameRoom({ ...game, cards: updatedCards });
 
 						setIsProcessing(false);
 					}, 1000);
