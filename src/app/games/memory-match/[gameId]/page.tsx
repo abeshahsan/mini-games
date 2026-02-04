@@ -1,6 +1,5 @@
 "use client";
 
-import { Card } from "@/src/app/games/types";
 import { Gamer, MemoryMatchGameRoom, Player } from "@/src/types";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -12,18 +11,15 @@ export default function MemoryMatchPage() {
 	const gameId = params.gameId as string;
 
 	const [gameRoom, setGameRoom] = useState<MemoryMatchGameRoom | null>(null);
-	const [cards, setCards] = useState<Card[]>([]);
-	const [flippedCards, setFlippedCards] = useState<number[]>([]);
-	const [moves, setMoves] = useState(0);
 	const [isWon, setIsWon] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [gamer, setGamer] = useState<Gamer | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isMyTurn, setIsMyTurn] = useState(false);
 
-	const stateRef = useRef({ cards, flippedCards, isProcessing, isWon, gameRoom });
+	const stateRef = useRef({ isProcessing, isWon, gameRoom });
 	useEffect(() => {
-		stateRef.current = { cards, flippedCards, isProcessing, isWon, gameRoom };
+		stateRef.current = { isProcessing, isWon, gameRoom };
 	});
 
 	// Fetch current user
@@ -80,8 +76,6 @@ export default function MemoryMatchPage() {
 				}
 
 				setGameRoom(game);
-				setCards(game.cards);
-				setMoves(game.moves);
 				setIsMyTurn(game.currentTurn === gamer?.id);
 
 				if (game.status === "completed") {
@@ -114,8 +108,8 @@ export default function MemoryMatchPage() {
 		}
 
 		// Check if card can be flipped
-		const card = cards[id];
-		if (card.isFlipped || card.isMatched || isProcessing || flippedCards.length >= 2) {
+		const card = gameRoom.cards[id];
+		if (card.isFlipped || card.isMatched || isProcessing) {
 			return;
 		}
 
@@ -129,36 +123,28 @@ export default function MemoryMatchPage() {
 				cardId: id,
 				userId: gamer.id,
 			}),
-		})
-			.then((res) => {
-				if (!res.ok) {
-					return res.json().then((data) => {
-						throw new Error(data.error || "Failed to make move");
-					});
-				}
-			})
-			.catch((err) => {
-				console.error("Failed to make move:", err);
-				setError("Failed to make move");
-				setTimeout(() => setError(null), 2000);
-			});
+		}).catch((err) => {
+			console.error("Failed to make move:", err);
+			setError("Failed to make move");
+			setTimeout(() => setError(null), 2000);
+		});
 	};
 
 	// Handle Pusher events
 	useEffect(() => {
 		console.log("[Pusher] Initializing for game:", gameId);
-		
+
 		const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
 			cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
 			forceTLS: true,
 		});
 
 		const channel = pusherClient.subscribe(`memory-match-${gameId}`);
-		
+
 		channel.bind("pusher:subscription_succeeded", () => {
 			console.log("[Pusher] Successfully subscribed to channel:", `memory-match-${gameId}`);
 		});
-		
+
 		channel.bind("pusher:subscription_error", (error: any) => {
 			console.error("[Pusher] Subscription error:", error);
 		});
@@ -173,24 +159,23 @@ export default function MemoryMatchPage() {
 		channel.bind("game-started", (data: { game: MemoryMatchGameRoom }) => {
 			console.log("[Pusher] Game started:", data);
 			setGameRoom(data.game);
-			setCards(data.game.cards);
 		});
 
 		// Card flipped event - update immediately
 		channel.bind("card-flipped", (data: { cardId: number; userId: string; game: MemoryMatchGameRoom }) => {
 			console.log("[Pusher] Card flipped:", data.cardId, "by user:", data.userId);
-			
+
+			const allFlilppedCards = data.game.cards.filter((c) => c.isFlipped);
+			console.log("[Pusher] Total flipped cards now:", allFlilppedCards);
+
 			// Update game state
 			setGameRoom(data.game);
-
-			// Immediately show the flipped card
-			setCards([...data.game.cards]);
 		});
 
 		// Match result event - handle after both cards are flipped
 		channel.bind(
 			"match-result",
-			(data: {
+			async (data: {
 				matchFound: boolean;
 				shouldSwitchTurn: boolean;
 				game: MemoryMatchGameRoom;
@@ -202,18 +187,19 @@ export default function MemoryMatchPage() {
 					firstCard: data.firstCardId,
 					secondCard: data.secondCardId,
 				});
-				
+
+				await new Promise((resolve) => setTimeout(resolve, 1000)); // Small delay for better UX
+
 				const { game, matchFound } = data;
 
 				setGameRoom(game);
-				setMoves(game.moves);
+
 				setIsMyTurn(game.currentTurn === gamer?.id);
 				setIsProcessing(true);
 
 				if (matchFound) {
 					// Match found - cards stay flipped and matched
 					setTimeout(() => {
-						setCards([...game.cards]);
 						setIsProcessing(false);
 
 						// Check if game is complete
@@ -228,7 +214,7 @@ export default function MemoryMatchPage() {
 						const updatedCards = [...game.cards];
 						updatedCards[data.firstCardId].isFlipped = false;
 						updatedCards[data.secondCardId].isFlipped = false;
-						setCards(updatedCards);
+
 						setIsProcessing(false);
 					}, 1000);
 				}
@@ -380,7 +366,9 @@ export default function MemoryMatchPage() {
 					<div className='flex justify-between items-center mb-3'>
 						<div className='text-sm'>
 							<span className='font-semibold text-slate-700 dark:text-slate-300'>Moves: </span>
-							<span className='text-lg font-bold text-indigo-600 dark:text-indigo-400'>{moves}</span>
+							<span className='text-lg font-bold text-indigo-600 dark:text-indigo-400'>
+								{gameRoom.moves}
+							</span>
 						</div>
 						<div className='text-sm'>
 							<span className='font-semibold text-slate-700 dark:text-slate-300'>Game ID: </span>
@@ -460,7 +448,7 @@ export default function MemoryMatchPage() {
 				)}
 
 				<div className='grid grid-cols-4 gap-2 sm:gap-4'>
-					{cards.map((card) => (
+					{gameRoom.cards.map((card) => (
 						<div
 							key={card.id}
 							onClick={() => handleCardClick(card.id)}
@@ -500,7 +488,7 @@ export default function MemoryMatchPage() {
 				{isWon && (
 					<div className='mt-8 text-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border-2 border-green-500 animate-in fade-in zoom-in duration-300'>
 						<h2 className='text-2xl font-bold text-slate-900 dark:text-white mb-2'>Game Complete! 🎉</h2>
-						<p className='text-sm text-slate-600 dark:text-slate-400 mb-4'>Total moves: {moves}</p>
+						<p className='text-sm text-slate-600 dark:text-slate-400 mb-4'>Total moves: {gameRoom.moves}</p>
 
 						{/* Final scores */}
 						<div className='mb-4 space-y-2'>

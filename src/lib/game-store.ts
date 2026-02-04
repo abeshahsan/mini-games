@@ -24,7 +24,6 @@ export function createGame(gameId: string, hostId: string, hostUsername: string,
 		currentTurn: hostId,
 		status: "waiting",
 		moves: 0,
-		flippedCards: [],
 		hostId,
 		createdAt: Date.now(),
 	};

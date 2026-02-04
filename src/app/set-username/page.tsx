@@ -2,14 +2,16 @@
 
 import { useState, useTransition, Suspense } from "react";
 import { setUsernameAction } from "@/src/app/set-username/action";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 function SetUserNameForm() {
 	const [isPending, startTransition] = useTransition();
 	const [error, setError] = useState<string | null>(null);
-	const searchParams = useSearchParams();
+	const [success, setSuccess] = useState(false);
+	const redirectURL = useSearchParams().get("redirect") || "/";
+	const router = useRouter();
 
-	function handleSubmitUsername(event: React.FormEvent<HTMLFormElement>) {
+	function handleSubmitUsername(event: React.SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setError(null);
 
@@ -24,10 +26,8 @@ function SetUserNameForm() {
 		startTransition(async () => {
 			try {
 				await setUsernameAction(username);
-
-				const redirectTo = searchParams.get("redirect") || "/";
-				// Force full refresh to ensure cookies are updated for server components
-				window.location.href = redirectTo;
+				setSuccess(true);
+				router.replace(redirectURL);
 			} catch (e: any) {
 				console.log("Error setting username:", e);
 				setError("Failed to save username. Please try again.");
@@ -60,7 +60,9 @@ function SetUserNameForm() {
 						placeholder='e.g. MasterGamer'
 						className='rounded-xl border border-gray-200 p-4 text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-gray-400 bg-gray-50'
 						required
-						disabled={isPending}
+						disabled={isPending || success}
+						autoComplete='off'
+						autoFocus
 						minLength={2}
 						maxLength={20}
 					/>
@@ -69,7 +71,7 @@ function SetUserNameForm() {
 
 				<button
 					type='submit'
-					disabled={isPending}
+					disabled={isPending || success}
 					className='w-full flex justify-center items-center rounded-xl bg-blue-600 py-4 px-6 text-base font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200'
 				>
 					{isPending ?

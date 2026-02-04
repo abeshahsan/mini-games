@@ -21,7 +21,6 @@ export interface MemoryMatchGameRoom {
 	currentTurn: string; // player ID
 	status: "waiting" | "in-progress" | "completed";
 	moves: number;
-	flippedCards: number[];
 	hostId: string;
 	createdAt: number;
 }
