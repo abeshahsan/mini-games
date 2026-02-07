@@ -1,4 +1,4 @@
-import { Card as CardType } from "@/types";
+import { MemoryMatchCard as CardType } from "@/types";
 
 type CardProps = {
 	card: CardType;

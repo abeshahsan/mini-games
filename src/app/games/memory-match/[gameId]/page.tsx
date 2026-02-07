@@ -4,17 +4,14 @@ import { Card } from "@/components/games/memory-match/card";
 import { GameError } from "@/components/games/memory-match/error";
 import { FinalScores } from "@/components/games/memory-match/final-scores";
 import { LoadingGame } from "@/components/games/memory-match/loading-game";
+import { GameStatusBar } from "@/components/games/memory-match/score-board";
 import { WaitingScreen } from "@/components/games/memory-match/waiting-screen";
-import { Gamer, MemoryMatchGameRoom, Player } from "@/types";
+import { useCardClickHandler, useJoinOrFetchGame, useSetUpPusherClient } from "@/hooks/games/memory-match";
+import { Gamer, MemoryMatchGameRoom } from "@/types";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import Pusher from "pusher-js";
 import { useEffect, useState } from "react";
 
 export default function MemoryMatchPage() {
-	const params = useParams();
-	const gameId = params.gameId as string;
-
 	const [gameRoom, setGameRoom] = useState<MemoryMatchGameRoom | null>(null);
 	const [isWon, setIsWon] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -44,190 +41,12 @@ export default function MemoryMatchPage() {
 		fetchUser();
 	}, []);
 
-	// Join or fetch game state
-	useEffect(() => {
-		if (!gamer) return;
+	useJoinOrFetchGame({ gamer, setGameRoom, setIsMyTurn, setIsWon, setError });
 
-		async function joinOrFetchGame() {
-			try {
-				// Try to join the game via POST
-				let joinResponse = await fetch("/api/games/memory-match/join-game", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ gameId }),
-				});
+	const handleCardClick = useCardClickHandler({ gamer, gameRoom, setError, isProcessing });
 
-				// If POST fails, try GET as fallback
-				if (!joinResponse.ok) {
-					console.warn("POST join-game failed, trying GET fallback");
-					joinResponse = await fetch(`/api/games/memory-match/join-game?gameId=${gameId}`, {
-						method: "GET",
-					});
-				}
+	useSetUpPusherClient({ gamer, setGameRoom, setIsMyTurn, setIsWon, setIsProcessing });
 
-				if (!joinResponse.ok) {
-					throw new Error("Failed to join game");
-				}
-
-				const { game }: { game: MemoryMatchGameRoom } = await joinResponse.json();
-
-				if (!game) {
-					throw new Error("No game data received");
-				}
-
-				setGameRoom(game);
-				setIsMyTurn(game.currentTurn === gamer?.id);
-
-				if (game.status === "completed") {
-					setIsWon(true);
-				}
-			} catch (err) {
-				console.error("Error joining or fetching game:", err);
-				setError("Failed to join game. Game may not exist or is full.");
-			}
-		}
-
-		joinOrFetchGame();
-	}, [gamer, gameId]);
-
-	const handleCardClick = (id: number) => {
-		if (!gamer || !gameRoom) return;
-
-		// Check if it's player's turn
-		if (gameRoom.currentTurn !== gamer.id) {
-			setError("It's not your turn!");
-			setTimeout(() => setError(null), 2000);
-			return;
-		}
-
-		// Check if game is in progress
-		if (gameRoom.status !== "in-progress") {
-			setError("Game is not in progress");
-			setTimeout(() => setError(null), 2000);
-			return;
-		}
-
-		// Check if card can be flipped
-		const card = gameRoom.cards[id];
-		if (card.isFlipped || card.isMatched || isProcessing) {
-			return;
-		}
-
-		fetch("/api/games/memory-match/move", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				gameId,
-				cardId: id,
-				userId: gamer.id,
-			}),
-		}).catch((err) => {
-			console.error("Failed to make move:", err);
-			setError("Failed to make move");
-			setTimeout(() => setError(null), 2000);
-		});
-	};
-
-	// Handle Pusher events
-	useEffect(() => {
-		console.log("[Pusher] Initializing for game:", gameId);
-
-		const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-			cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-			forceTLS: true,
-		});
-
-		const channel = pusherClient.subscribe(`memory-match-${gameId}`);
-
-		channel.bind("pusher:subscription_succeeded", () => {
-			console.log("[Pusher] Successfully subscribed to channel:", `memory-match-${gameId}`);
-		});
-
-		channel.bind("pusher:subscription_error", (error: any) => {
-			console.error("[Pusher] Subscription error:", error);
-		});
-
-		// Player joined event
-		channel.bind("player-joined", (data: { player: Player; game: MemoryMatchGameRoom }) => {
-			console.log("[Pusher] Player joined:", data);
-			setGameRoom(data.game);
-		});
-
-		// Game started event
-		channel.bind("game-started", (data: { game: MemoryMatchGameRoom }) => {
-			console.log("[Pusher] Game started:", data);
-			setGameRoom(data.game);
-		});
-
-		// Card flipped event - update immediately
-		channel.bind("card-flipped", (data: { cardId: number; userId: string; game: MemoryMatchGameRoom }) => {
-			console.log("[Pusher] Card flipped:", data.cardId, "by user:", data.userId);
-
-			const allFlilppedCards = data.game.cards.filter((c) => c.isFlipped);
-			console.log("[Pusher] Total flipped cards now:", allFlilppedCards);
-
-			// Update game state
-			setGameRoom(data.game);
-		});
-
-		// Match result event - handle after both cards are flipped
-		channel.bind(
-			"match-result",
-			async (data: {
-				matchFound: boolean;
-				shouldSwitchTurn: boolean;
-				game: MemoryMatchGameRoom;
-				firstCardId: number;
-				secondCardId: number;
-			}) => {
-				console.log("[Pusher] Match result:", {
-					matchFound: data.matchFound,
-					firstCard: data.firstCardId,
-					secondCard: data.secondCardId,
-				});
-
-				const { game, matchFound } = data;
-
-				// setGameRoom(game);
-
-				setIsMyTurn(game.currentTurn === gamer?.id);
-				setIsProcessing(true);
-
-				if (matchFound) {
-					// Match found - cards stay flipped and matched
-					setTimeout(() => {
-						setIsProcessing(false);
-
-						// Check if game is complete
-						if (game.status === "completed") {
-							setIsWon(true);
-						}
-					}, 500);
-				} else {
-					// No match - flip cards back after delay
-					setTimeout(() => {
-						setGameRoom((prevGame) => {
-							if (!prevGame) return prevGame;
-							const updatedCards = [...prevGame.cards];
-							updatedCards[data.firstCardId].isFlipped = false;
-							updatedCards[data.secondCardId].isFlipped = false;
-							return { ...prevGame, cards: updatedCards, currentTurn: game.currentTurn };
-						});
-						setIsProcessing(false);
-					}, 1000);
-				}
-			},
-		);
-
-		return () => {
-			pusherClient.unsubscribe(`memory-match-${gameId}`);
-			pusherClient.disconnect();
-		};
-	}, [gameId, gamer]);
-
-	// Waiting for the game to load
 	if (!gameRoom) {
 		return <LoadingGame error={error} />;
 	}
@@ -246,7 +65,12 @@ export default function MemoryMatchPage() {
 					<p className='mt-1 text-sm text-slate-600 dark:text-slate-400'>Match the pairs of words!</p>
 				</div>
 
-				{/* Game Status Bar */}
+				<GameStatusBar
+					gameRoom={gameRoom}
+					gamer={gamer!}
+					isMyTurn={isMyTurn}
+					isWon={isWon}
+				/>
 
 				<GameError message={error} />
 

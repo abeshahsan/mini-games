@@ -1,6 +1,6 @@
-import { Player, Gamer } from "@/types";
+import { MemoryMatchPlayer, Gamer } from "@/types";
 
-export function FinalScores({ players, gamer }: { players: Player[]; gamer: Gamer }) {
+export function FinalScores({ players, gamer }: { players: MemoryMatchPlayer[]; gamer: Gamer }) {
 	return (
 		<div className='mb-4 space-y-2'>
 			{players

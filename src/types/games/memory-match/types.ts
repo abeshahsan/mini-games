@@ -1,10 +1,10 @@
-export interface Player {
+export interface MemoryMatchPlayer {
 	id: string;
 	username: string;
 	score: number;
 }
 
-export interface Card {
+export interface MemoryMatchCard {
 	id: number;
 	word: string;
 	isFlipped: boolean;
@@ -13,8 +13,8 @@ export interface Card {
 
 export interface MemoryMatchGameRoom {
 	gameId: string;
-	cards: Array<Card>;
-	players: Player[];
+	cards: Array<MemoryMatchCard>;
+	players: MemoryMatchPlayer[];
 	currentTurn: string; // player ID
 	status: "waiting" | "in-progress" | "completed";
 	moves: number;

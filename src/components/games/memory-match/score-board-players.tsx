@@ -1,11 +1,11 @@
-import { Gamer, Player } from "@/types";
+import { Gamer, MemoryMatchPlayer } from "@/types";
 
 export function ScoreBoardPlayers({
 	players,
 	gamer,
 	currentTurn,
 }: {
-	players: Player[];
+	players: MemoryMatchPlayer[];
 	gamer: Gamer | null;
 	currentTurn: string;
 }) {
