@@ -1,22 +1,14 @@
-import { Gamer, MemoryMatchGameRoom } from "@/types";
+import { useGamerStore } from "@/store/gamer";
+import { useMemoryMatchGameStore } from "@/store/games/memory-match";
+import { MemoryMatchGameRoom } from "@/types";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
-export function useJoinOrFetchGame({
-	gamer,
-	setGameRoom,
-	setIsMyTurn,
-	setIsWon,
-	setError,
-}: {
-	gamer: Gamer | null;
-	setGameRoom: React.Dispatch<React.SetStateAction<MemoryMatchGameRoom | null>>;
-	setIsMyTurn: React.Dispatch<React.SetStateAction<boolean>>;
-	setIsWon: React.Dispatch<React.SetStateAction<boolean>>;
-	setError: React.Dispatch<React.SetStateAction<string | null>>;
-}) {
+export function useJoinOrFetchGame() {
 	const params = useParams();
 	const gameId = params.gameId as string;
+	const gamer = useGamerStore((s) => s.gamer);
+	const { setGameRoom, setIsMyTurn, setIsWon, setError } = useMemoryMatchGameStore();
 
 	useEffect(() => {
 		if (!gamer) return;

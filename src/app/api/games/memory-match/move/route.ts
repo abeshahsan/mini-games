@@ -1,51 +1,78 @@
 import { pusher } from "@/lib/pusher";
-import { MemoryMatchCard } from "@/types";
+import { getGame } from "@/lib/game-store";
 
 export async function POST(request: Request) {
-	const { gameId: channelId, cardId, cards, userId } = await request.json();
+	const { gameId, cardId, userId } = await request.json();
 
-	console.log("[Move API] Request received:", { channelId, cardId, cards, userId });
+	const game = getGame(gameId);
 
-	const { updatedCards, resetFlippedCards, didFoundMatch } = chainCardUpdate(cards, cardId);
+	if (!game) {
+		return Response.json({ error: "Game not found" }, { status: 404 });
+	}
 
-	pusher.trigger(channelId, "card-flipped", {
-		updatedCards,
+	if (game.status !== "in-progress") {
+		return Response.json({ error: "Game is not in progress" }, { status: 400 });
+	}
+
+	if (game.currentTurn !== userId) {
+		return Response.json({ error: "Not your turn" }, { status: 403 });
+	}
+
+	const card = game.cards[cardId];
+	if (!card || card.isFlipped || card.isMatched) {
+		return Response.json({ error: "Invalid move" }, { status: 400 });
+	}
+
+	// Flip the card
+	game.cards[cardId].isFlipped = true;
+
+	// Broadcast the flip immediately to all players
+	await pusher.trigger(`memory-match-${gameId}`, "card-flipped", {
 		cardId,
 		userId,
-		resetFlippedCards: resetFlippedCards,
-		didFoundMatch,
+		game,
 	});
 
-	return new Response(JSON.stringify({ success: true }), { status: 200 });
-}
+	// Check if we need to evaluate a match (after 2 cards are flipped)
+	const flippedCardIds = game.cards
+		.map((c, index) => (c.isFlipped && !c.isMatched ? index : -1))
+		.filter((id) => id !== -1);
 
-function uppdatecards(cards: MemoryMatchCard[], cardId: number) {
-	return cards.map((card: MemoryMatchCard) => (card.id === cardId ? { ...card, isFlipped: true } : card));
-}
+	if (flippedCardIds.length === 2) {
+		game.moves++;
+		const [first, second] = flippedCardIds;
+		let matchFound = false;
 
-function checkForMatch(updatedCards: MemoryMatchCard[]) {
-	const flippedCards = updatedCards.filter((card: any) => card.isFlipped && !card.isMatched);
-	let didFoundMatch = false,
-		cardsWithMatchStatus = [...updatedCards];
-	if (flippedCards.length === 2) {
-		didFoundMatch = flippedCards[0].word === flippedCards[1].word;
-		if (didFoundMatch) {
-			cardsWithMatchStatus = updatedCards.map((card: MemoryMatchCard) =>
-				card.isFlipped ? { ...card, isMatched: true, isFlipped: false } : card,
-			);
+		if (game.cards[first].word === game.cards[second].word) {
+			// Match found
+			game.cards[first].isMatched = true;
+			game.cards[second].isMatched = true;
+			matchFound = true;
+
+			const player = game.players.find((p) => p.id === userId);
+			if (player) player.score++;
+
+			if (game.cards.every((c) => c.isMatched)) {
+				game.status = "completed";
+			}
+		} else {
+			// No match - flip cards back and switch turn
+			game.cards[first].isFlipped = false;
+			game.cards[second].isFlipped = false;
+
+			const currentIdx = game.players.findIndex((p) => p.id === game.currentTurn);
+			const nextIdx = (currentIdx + 1) % game.players.length;
+			game.currentTurn = game.players[nextIdx].id;
 		}
+
+		// Broadcast match result
+		await pusher.trigger(`memory-match-${gameId}`, "match-result", {
+			matchFound,
+			game,
+			firstCardId: first,
+			secondCardId: second,
+		});
 	}
-	return { cardsWithMatchStatus, didFoundMatch };
-}
 
-function needsResetFlippedCards(updatedCards: MemoryMatchCard[]) {
-	const flippedCards = updatedCards.filter((card: any) => card.isFlipped && !card.isMatched);
-	return flippedCards.length === 2;
-}
-
-function chainCardUpdate(cards: MemoryMatchCard[], cardId: number) {
-	const updatedCards = uppdatecards(cards, cardId);
-	const { cardsWithMatchStatus, didFoundMatch } = checkForMatch(updatedCards);
-	const resetFlippedCards = needsResetFlippedCards(cardsWithMatchStatus);
-	return { updatedCards: cardsWithMatchStatus, resetFlippedCards, didFoundMatch };
+	return Response.json({ success: true, game });
 }

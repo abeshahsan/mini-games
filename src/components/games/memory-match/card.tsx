@@ -8,23 +8,25 @@ type CardProps = {
 };
 
 export function Card({ card, isMyTurn, isProcessing, handleCardClick }: CardProps) {
+	const canInteract = isMyTurn && !isProcessing && !card.isFlipped && !card.isMatched;
+
 	return (
 		<div
 			key={card.id}
 			onClick={() => handleCardClick(card.id)}
-			className={`relative aspect-square cursor-pointer transition-all duration-500 transform-3d ${card.isFlipped || card.isMatched ? "rotate-y-180" : ""} ${!isMyTurn || isProcessing ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
+			className={`relative aspect-square cursor-pointer transition-all duration-500 transform-3d ${card.isFlipped || card.isMatched ? "rotate-y-180" : ""} ${canInteract ? "hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/10" : ""} ${!isMyTurn || isProcessing ? "pointer-events-none" : ""}`}
 		>
 			{/* Card Front (Hidden) */}
-			<div className='absolute inset-0 bg-white dark:bg-slate-800 rounded-lg shadow-md border-2 border-indigo-100 dark:border-slate-700 flex items-center justify-center backface-hidden'>
-				<span className='text-2xl font-bold text-indigo-200 dark:text-slate-700'>?</span>
+			<div className='absolute inset-0 bg-slate-800 rounded-xl shadow-md border-2 border-slate-700/50 flex items-center justify-center backface-hidden hover:border-indigo-500/30 transition-colors'>
+				<span className='text-3xl font-bold text-slate-600'>?</span>
 			</div>
 
 			{/* Card Back (Word) */}
 			<div
-				className={`absolute inset-0 rounded-lg shadow-lg flex items-center justify-center p-2 backface-hidden rotate-y-180 ${card.isMatched ? "bg-green-100 dark:bg-green-900/30 border-green-500 shadow-green-100/50" : "bg-white dark:bg-slate-700 border-indigo-400"} border-2 `}
+				className={`absolute inset-0 rounded-xl shadow-lg flex items-center justify-center p-2 backface-hidden rotate-y-180 ${card.isMatched ? "bg-green-500/10 border-green-500/50 shadow-green-500/10" : "bg-slate-700 border-indigo-400/50"} border-2`}
 			>
 				<span
-					className={` font-bold text-center wrap-break-word ${card.isMatched ? "text-green-700 dark:text-green-400" : "text-slate-900 dark:text-white"} ${card.word.length > 8 ? "text-xs italic" : "text-sm sm:text-base"} `}
+					className={`font-bold text-center break-words ${card.isMatched ? "text-green-400" : "text-white"} ${card.word.length > 8 ? "text-xs italic" : "text-sm sm:text-base"}`}
 				>
 					{card.word}
 				</span>

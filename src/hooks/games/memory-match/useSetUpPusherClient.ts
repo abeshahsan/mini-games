@@ -1,67 +1,80 @@
 import { useMemoryMatchGameStore } from "@/store/games/memory-match";
-import { MemoryMatchCard } from "@/types";
+import { MemoryMatchGameRoom, MemoryMatchPlayer } from "@/types";
+import { useParams } from "next/navigation";
 import Pusher from "pusher-js";
-import { useEffect, useRef, useState } from "react";
-
-type PusherClient = {
-	pusherClient: Pusher | null;
-	pusherChannel: string;
-};
+import { useEffect } from "react";
+import { useGamerStore } from "@/store/gamer";
 
 export function useSetUpPusherClient() {
-	const [pusherClient, setPusherClient] = useState<Pusher | null>(null);
-	const [pusherChannel, setPusherChannel] = useState("12345678910");
-
-	const cardStore = useMemoryMatchGameStore();
-
-	const pusherRef = useRef<PusherClient>({
-		pusherClient,
-		pusherChannel,
-	});
+	const params = useParams();
+	const gameId = params.gameId as string;
+	const gamer = useGamerStore((s) => s.gamer);
+	const { setGameRoom, setIsMyTurn, setIsWon, setIsProcessing } = useMemoryMatchGameStore();
 
 	useEffect(() => {
-		pusherRef.current = {
-			pusherClient,
-			pusherChannel,
-		};
-	});
+		if (!gamer) return;
 
-	useEffect(() => {
-		function initializePusher() {
-			const client = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-				cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-			});
-			pusherRef.current.pusherClient = client;
-			setPusherClient(pusherRef.current.pusherClient);
-			const channel = client.subscribe(pusherRef.current.pusherChannel);
-			channel.bind("card-flipped", (data: any) => {
-				cardStore.updateCards(data.updatedCards as MemoryMatchCard[]);
+		const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+			cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+			forceTLS: true,
+		});
 
-				if (!data.didFoundMatch && data.resetFlippedCards) {
+		const pusherChannel = pusherClient.subscribe(`memory-match-${gameId}`);
+
+		// Player joined event
+		pusherChannel.bind("player-joined", (data: { player: MemoryMatchPlayer; game: MemoryMatchGameRoom }) => {
+			setGameRoom(data.game);
+		});
+
+		// Game started event
+		pusherChannel.bind("game-started", (data: { game: MemoryMatchGameRoom }) => {
+			setGameRoom(data.game);
+			setIsMyTurn(data.game.currentTurn === gamer.id);
+		});
+
+		// Card flipped event - update game state immediately
+		pusherChannel.bind(
+			"card-flipped",
+			(data: { cardId: number; userId: string; game: MemoryMatchGameRoom }) => {
+				setGameRoom(data.game);
+			},
+		);
+
+		// Match result event - handle match/no-match with visual delay
+		pusherChannel.bind(
+			"match-result",
+			(data: {
+				matchFound: boolean;
+				game: MemoryMatchGameRoom;
+				firstCardId: number;
+				secondCardId: number;
+			}) => {
+				const { game, matchFound } = data;
+				setIsProcessing(true);
+
+				if (matchFound) {
 					setTimeout(() => {
-						cardStore.updateCards(
-							data.updatedCards.map((card: MemoryMatchCard) =>
-								!card.isMatched ? { ...card, isFlipped: false } : card,
-							),
-						);
-					}, 1500);
+						setGameRoom(game);
+						setIsMyTurn(game.currentTurn === gamer.id);
+						setIsProcessing(false);
+
+						if (game.status === "completed") {
+							setIsWon(true);
+						}
+					}, 500);
+				} else {
+					setTimeout(() => {
+						setGameRoom(game);
+						setIsMyTurn(game.currentTurn === gamer.id);
+						setIsProcessing(false);
+					}, 1000);
 				}
-			});
-		}
+			},
+		);
 
-		initializePusher();
 		return () => {
-			if (pusherRef.current.pusherClient) {
-				pusherRef.current.pusherClient.unsubscribe(pusherRef.current.pusherChannel);
-				pusherRef.current.pusherClient.disconnect();
-			}
+			pusherClient.unsubscribe(`memory-match-${gameId}`);
+			pusherClient.disconnect();
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	return {
-		pusherClient,
-		pusherChannel,
-		setPusherChannel,
-	};
+	}, [gameId, gamer, setGameRoom, setIsMyTurn, setIsProcessing, setIsWon]);
 }

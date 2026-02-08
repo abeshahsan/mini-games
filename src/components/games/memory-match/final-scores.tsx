@@ -1,4 +1,5 @@
 import { MemoryMatchPlayer, Gamer } from "@/types";
+import { FiAward } from "react-icons/fi";
 
 export function FinalScores({ players, gamer }: { players: MemoryMatchPlayer[]; gamer: Gamer }) {
 	return (
@@ -13,17 +14,17 @@ export function FinalScores({ players, gamer }: { players: MemoryMatchPlayer[]; 
 						<div
 							key={player.id}
 							className={`p-3 rounded-lg ${
-								isWinner ?
-									"bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-500"
-								:	"bg-slate-100 dark:bg-slate-700/50"
+								isWinner
+									? "bg-yellow-500/10 border-2 border-yellow-500/50"
+									: "bg-slate-700/50 border border-slate-600/30"
 							}`}
 						>
 							<div className='flex justify-between items-center'>
-								<span className='font-semibold text-slate-700 dark:text-slate-300'>
-									{isWinner && "🏆 "}
+								<span className='font-semibold text-slate-200 inline-flex items-center gap-1.5'>
+									{isWinner && <FiAward className='w-4 h-4 text-yellow-400' />}
 									{player.username} {isMe && "(You)"}
 								</span>
-								<span className='font-bold text-lg text-indigo-600 dark:text-indigo-400'>
+								<span className='font-bold text-lg text-indigo-400'>
 									{player.score} {player.score === 1 ? "match" : "matches"}
 								</span>
 							</div>
