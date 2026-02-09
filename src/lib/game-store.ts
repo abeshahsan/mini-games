@@ -129,7 +129,7 @@ export async function cleanupOldGames(): Promise<void> {
 		for (const key of keys) {
 			const data = await redisInstance.get(key);
 			if (data) {
-				const game = JSON.parse(data as string) as MemoryMatchGameRoom;
+				const game = data as MemoryMatchGameRoom;
 				if (game.createdAt < twoHoursAgo) {
 					await redisInstance.del(key);
 					console.log("[Game Store] Cleaned up old game:", game.gameId);
@@ -170,7 +170,7 @@ export async function getPlayerStats(player1Id: string, player2Id: string): Prom
 		};
 	}
 
-	return JSON.parse(data as string) as PlayerStats;
+	return data as PlayerStats;
 }
 
 export async function updatePlayerStats(winnerId: string | null, player1Id: string, player2Id: string): Promise<void> {
