@@ -25,7 +25,7 @@ export function WaitingScreen({ gameRoom }: { gameRoom: MemoryMatchGameRoom }) {
 			/>
 
 			<div className='max-w-lg mx-auto'>
-				<div className='bg-[var(--surface)] backdrop-blur-sm p-8 rounded-2xl border border-[var(--surface-border)] text-center' style={{ boxShadow: 'var(--shadow-xl)' }}>
+				<div className='bg-surface backdrop-blur-sm p-8 rounded-2xl border border-surface-border text-center' style={{ boxShadow: 'var(--shadow-xl)' }}>
 					{/* Game logo */}
 					{/* eslint-disable-next-line @next/next/no-img-element */}
 					<img
@@ -34,29 +34,29 @@ export function WaitingScreen({ gameRoom }: { gameRoom: MemoryMatchGameRoom }) {
 						className='w-16 h-16 mx-auto mb-4 rounded-xl'
 					/>
 
-					<h1 className='text-2xl font-bold text-[var(--text-primary)] mb-2'>Waiting for Player 2</h1>
+					<h1 className='text-2xl font-bold text-text-primary mb-2'>Waiting for Player 2</h1>
 
 					{/* Bouncing dots */}
 					<div className='flex items-center justify-center gap-1.5 mb-6'>
 						<div
-							className='h-2 w-2 bg-[var(--brand)] rounded-full animate-bounce'
+							className='h-2 w-2 bg-brand rounded-full animate-bounce'
 							style={{ animationDelay: "0ms" }}
 						></div>
 						<div
-							className='h-2 w-2 bg-[var(--brand)] rounded-full animate-bounce'
+							className='h-2 w-2 bg-brand rounded-full animate-bounce'
 							style={{ animationDelay: "150ms" }}
 						></div>
 						<div
-							className='h-2 w-2 bg-[var(--brand)] rounded-full animate-bounce'
+							className='h-2 w-2 bg-brand rounded-full animate-bounce'
 							style={{ animationDelay: "300ms" }}
 						></div>
 					</div>
 
-					<p className='text-[var(--text-secondary)] mb-6'>Share the game link with a friend to start playing!</p>
+					<p className='text-text-secondary mb-6'>Share the game link with a friend to start playing!</p>
 
 					{/* Link display */}
-					<div className='bg-[var(--bg-tertiary)] p-3 rounded-lg mb-4 border border-[var(--surface-border)]'>
-						<code className='text-sm text-[var(--brand-text)] break-all'>
+					<div className='bg-bg-tertiary p-3 rounded-lg mb-4 border border-surface-border'>
+						<code className='text-sm text-brand-text break-all'>
 							{typeof window !== "undefined" ? window.location.href : ""}
 						</code>
 					</div>
@@ -64,7 +64,7 @@ export function WaitingScreen({ gameRoom }: { gameRoom: MemoryMatchGameRoom }) {
 					{/* Copy button */}
 					<button
 						onClick={handleClipboardCopy}
-						className='inline-flex items-center gap-2 px-6 py-3 bg-[var(--brand)] text-[var(--text-inverse)] rounded-xl font-semibold hover:bg-[var(--brand-hover)] transition-all active:scale-95'
+						className='inline-flex items-center gap-2 px-6 py-3 bg-brand text-text-inverse rounded-xl font-semibold hover:bg-brand-hover transition-all active:scale-95'
 						style={{ boxShadow: 'var(--shadow-brand)' }}
 					>
 						{isCopied ?
@@ -80,27 +80,27 @@ export function WaitingScreen({ gameRoom }: { gameRoom: MemoryMatchGameRoom }) {
 					</button>
 
 					{/* Players section */}
-					<div className='mt-8 pt-6 border-t border-[var(--surface-border)]'>
+					<div className='mt-8 pt-6 border-t border-surface-border'>
 						<div className='flex items-center justify-center gap-2 mb-4'>
-							<FiUsers className='w-4 h-4 text-[var(--text-secondary)]' />
-							<h3 className='text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider'>Players</h3>
+							<FiUsers className='w-4 h-4 text-text-secondary' />
+							<h3 className='text-sm font-semibold text-text-secondary uppercase tracking-wider'>Players</h3>
 						</div>
 						<div className='space-y-2'>
 							{gameRoom.players.map((player, index) => (
 								<div
 									key={player.id}
-									className='flex items-center justify-between bg-[var(--bg-tertiary)] p-3 rounded-lg border border-[var(--surface-border)]'
+									className='flex items-center justify-between bg-bg-tertiary p-3 rounded-lg border border-surface-border'
 								>
-									<span className='font-medium text-[var(--text-primary)]'>
+									<span className='font-medium text-text-primary'>
 										{player.username} {player.id === gameRoom.hostId && "(Host)"}
 									</span>
-									<span className='text-xs text-[var(--text-tertiary)]'>Player {index + 1}</span>
+									<span className='text-xs text-text-tertiary'>Player {index + 1}</span>
 								</div>
 							))}
 							{/* Empty slot for Player 2 */}
 							{gameRoom.players.length < 2 && (
-								<div className='flex items-center justify-center bg-[var(--bg-secondary)] p-3 rounded-lg border border-dashed border-[var(--surface-border)]'>
-									<span className='text-sm text-[var(--text-tertiary)] italic'>Waiting for opponent...</span>
+								<div className='flex items-center justify-center bg-bg-secondary p-3 rounded-lg border border-dashed border-surface-border'>
+									<span className='text-sm text-text-tertiary italic'>Waiting for opponent...</span>
 								</div>
 							)}
 						</div>

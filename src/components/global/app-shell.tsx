@@ -31,7 +31,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 					{children}
 				</main>
 			</div>
-			<SiteFooter />
+			{/* Footer spans full width, below sidebar */}
+			<div className="lg:ml-60">
+				<SiteFooter />
+			</div>
 		</div>
 	);
 }

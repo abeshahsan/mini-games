@@ -15,7 +15,7 @@ export function Sidebar() {
 	const games = getAllGames();
 
 	return (
-		<aside className="hidden lg:flex lg:w-60 flex-col fixed top-14 bottom-0 left-0 z-40 border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] overflow-y-auto">
+		<aside className="hidden lg:flex lg:w-60 flex-col fixed top-14 bottom-0 left-0 z-40 border-r border-sidebar-border bg-sidebar-bg overflow-y-auto">
 			<nav className="flex-1 px-3 py-4 space-y-1">
 				{navItems.map((item) => {
 					const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -25,8 +25,8 @@ export function Sidebar() {
 							href={item.href}
 							className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
 								isActive
-									? "bg-[var(--sidebar-active)] text-[var(--sidebar-text-active)]"
-									: "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--text-primary)]"
+									? "bg-sidebar-active text-sidebar-text-active"
+									: "text-sidebar-text hover:bg-sidebar-hover hover:text-text-primary"
 							}`}
 						>
 							<item.icon className="w-4 h-4 shrink-0" />
@@ -36,8 +36,8 @@ export function Sidebar() {
 				})}
 
 				{/* Game list */}
-				<div className="pt-4 mt-4 border-t border-[var(--sidebar-border)]">
-					<p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+				<div className="pt-4 mt-4 border-t border-sidebar-border">
+					<p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
 						Games
 					</p>
 					{games.map((game) => {
@@ -49,10 +49,10 @@ export function Sidebar() {
 								href={game.iscomPleted ? gameHref : "#"}
 								className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
 									isActive
-										? "bg-[var(--sidebar-active)] text-[var(--sidebar-text-active)]"
+										? "bg-sidebar-active text-sidebar-text-active"
 										: game.iscomPleted
-										? "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--text-primary)]"
-										: "text-[var(--text-tertiary)] cursor-not-allowed"
+										? "text-sidebar-text hover:bg-sidebar-hover hover:text-text-primary"
+										: "text-text-tertiary cursor-not-allowed"
 								}`}
 							>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,7 +63,7 @@ export function Sidebar() {
 								/>
 								<span className="truncate">{game.name}</span>
 								{!game.iscomPleted && (
-									<span className="ml-auto text-[10px] font-semibold uppercase text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">
+									<span className="ml-auto text-[10px] font-semibold uppercase text-text-tertiary bg-bg-tertiary px-1.5 py-0.5 rounded">
 										Soon
 									</span>
 								)}

@@ -28,7 +28,7 @@ export function MedalBadge({ type, size = 64, label }: MedalBadgeProps) {
 				height={size}
 				className="drop-shadow-lg"
 			/>
-			<span className="text-xs font-semibold text-[var(--text-secondary)]">{displayLabel}</span>
+			<span className="text-xs font-semibold text-text-secondary">{displayLabel}</span>
 		</div>
 	);
 }

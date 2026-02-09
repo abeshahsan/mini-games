@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, Suspense } from "react";
 import { setUsernameAction } from "@/app/set-username/action";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useTransition } from "react";
 
 function SetUserNameForm() {
 	const [isPending, startTransition] = useTransition();
@@ -36,7 +36,10 @@ function SetUserNameForm() {
 	}
 
 	return (
-		<div className='w-full max-w-md p-8 bg-[var(--surface)] rounded-2xl border border-[var(--surface-border)]' style={{ boxShadow: "var(--shadow-xl)" }}>
+		<div
+			className='w-full max-w-md p-8 bg-surface rounded-2xl border border-surface-border'
+			style={{ boxShadow: "var(--shadow-xl)" }}
+		>
 			<div className='mb-8 text-center'>
 				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
@@ -44,8 +47,8 @@ function SetUserNameForm() {
 					alt='PlayClassix'
 					className='w-16 h-16 mx-auto mb-4 rounded-xl'
 				/>
-				<h1 className='text-3xl font-extrabold text-[var(--text-primary)]'>Welcome!</h1>
-				<p className='mt-2 text-[var(--text-secondary)]'>Pick a name to start playing</p>
+				<h1 className='text-3xl font-extrabold text-text-primary'>Welcome!</h1>
+				<p className='mt-2 text-text-secondary'>Pick a name to start playing</p>
 			</div>
 
 			<form
@@ -55,7 +58,7 @@ function SetUserNameForm() {
 				<div className='flex flex-col gap-2'>
 					<label
 						htmlFor='username'
-						className='text-sm font-semibold text-[var(--text-secondary)] ml-1'
+						className='text-sm font-semibold text-text-secondary ml-1'
 					>
 						What should we call you?
 					</label>
@@ -64,7 +67,7 @@ function SetUserNameForm() {
 						id='username'
 						name='username'
 						placeholder='e.g. MasterGamer'
-						className='rounded-xl border border-[var(--surface-border)] p-4 text-[var(--text-primary)] text-base focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all placeholder:text-[var(--text-tertiary)] bg-[var(--bg-secondary)]'
+						className='rounded-xl border border-surface-border p-4 text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all placeholder:text-text-tertiary bg-bg-secondary'
 						required
 						disabled={isPending || success}
 						autoComplete='off'
@@ -72,19 +75,19 @@ function SetUserNameForm() {
 						minLength={2}
 						maxLength={20}
 					/>
-					{error && <p className='text-[var(--danger)] text-xs mt-1 ml-1 font-medium'>{error}</p>}
+					{error && <p className='text-danger text-xs mt-1 ml-1 font-medium'>{error}</p>}
 				</div>
 
 				<button
 					type='submit'
 					disabled={isPending || success}
-					className='w-full flex justify-center items-center rounded-xl bg-[var(--brand)] py-4 px-6 text-base font-bold text-[var(--text-inverse)] hover:bg-[var(--brand-hover)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+					className='w-full flex justify-center items-center rounded-xl bg-brand py-4 px-6 text-base font-bold text-text-inverse hover:bg-brand-hover active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 					style={{ boxShadow: "var(--shadow-brand)" }}
 				>
 					{isPending ?
 						<div className='flex items-center gap-2'>
 							<svg
-								className='animate-spin h-5 w-5 text-[var(--text-inverse)]'
+								className='animate-spin h-5 w-5 text-text-inverse'
 								xmlns='http://www.w3.org/2000/svg'
 								fill='none'
 								viewBox='0 0 24 24'
@@ -114,9 +117,14 @@ function SetUserNameForm() {
 
 export default function SetUserNamePage() {
 	return (
-		<main className='flex items-center justify-center min-h-[calc(100vh-3.5rem)] bg-[var(--bg-primary)] p-4'>
+		<main className='flex items-center justify-center min-h-[calc(100vh-3.5rem)] bg-bg-primary p-4'>
 			<Suspense
-				fallback={<div className='animate-pulse bg-[var(--surface)] w-full max-w-md h-96 rounded-2xl' style={{ boxShadow: "var(--shadow-xl)" }}></div>}
+				fallback={
+					<div
+						className='animate-pulse bg-surface w-full max-w-md h-96 rounded-2xl'
+						style={{ boxShadow: "var(--shadow-xl)" }}
+					></div>
+				}
 			>
 				<SetUserNameForm />
 			</Suspense>

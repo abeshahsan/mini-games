@@ -6,7 +6,8 @@ export interface MemoryMatchPlayer {
 
 export interface MemoryMatchCard {
 	id: number;
-	word: string;
+	word: string; // slug used for match comparison (e.g. "apple")
+	image: string; // URL to the card face image
 	isFlipped: boolean;
 	isMatched: boolean;
 }

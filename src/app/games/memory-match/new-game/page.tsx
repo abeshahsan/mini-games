@@ -44,8 +44,8 @@ export default function NewGamePage() {
 	}, [router]);
 
 	return (
-		<main className='flex items-center justify-center min-h-screen bg-[var(--bg-primary)]'>
-			<div className='w-full max-w-md p-8 bg-[var(--surface)] backdrop-blur-sm rounded-2xl border border-[var(--surface-border)] mx-4 text-center' style={{ boxShadow: "var(--shadow-xl)" }}>
+		<main className='flex items-center justify-center min-h-screen bg-bg-primary'>
+			<div className='w-full max-w-md p-8 bg-surface backdrop-blur-sm rounded-2xl border border-surface-border mx-4 text-center' style={{ boxShadow: "var(--shadow-xl)" }}>
 				{!error ?
 					<div className='flex flex-col items-center gap-6'>
 						{/* Game icon */}
@@ -56,23 +56,23 @@ export default function NewGamePage() {
 							className='w-20 h-20 rounded-xl'
 						/>
 						<div className='relative h-12 w-12'>
-							<div className='absolute inset-0 rounded-full border-4 border-[var(--spinner-track)]'></div>
-							<div className='absolute inset-0 rounded-full border-4 border-[var(--spinner)] border-t-transparent animate-spin'></div>
+							<div className='absolute inset-0 rounded-full border-4 border-spinner-track'></div>
+							<div className='absolute inset-0 rounded-full border-4 border-spinner border-t-transparent animate-spin'></div>
 						</div>
 						<div className='space-y-2'>
-							<h1 className='text-2xl font-bold text-[var(--text-primary)]'>Setting up your game</h1>
-							<p className='text-[var(--text-secondary)]'>Shuffling cards and preparing the board...</p>
+							<h1 className='text-2xl font-bold text-text-primary'>Setting up your game</h1>
+							<p className='text-text-secondary'>Shuffling cards and preparing the board...</p>
 						</div>
 					</div>
 				:	<div className='flex flex-col items-center gap-4'>
-						<div className='h-12 w-12 flex items-center justify-center rounded-full bg-[var(--danger-muted)]'>
-							<FiAlertCircle className='w-6 h-6 text-[var(--danger)]' />
+						<div className='h-12 w-12 flex items-center justify-center rounded-full bg-danger-muted'>
+							<FiAlertCircle className='w-6 h-6 text-danger' />
 						</div>
-						<h1 className='text-xl font-bold text-[var(--text-primary)]'>Something went wrong</h1>
-						<p className='text-[var(--text-secondary)]'>{error}</p>
+						<h1 className='text-xl font-bold text-text-primary'>Something went wrong</h1>
+						<p className='text-text-secondary'>{error}</p>
 						<button
 							onClick={() => window.location.reload()}
-							className='mt-2 inline-flex items-center gap-2 rounded-xl bg-[var(--brand)] py-2.5 px-6 text-sm font-semibold text-[var(--text-inverse)] hover:bg-[var(--brand-hover)] transition-colors'
+							className='mt-2 inline-flex items-center gap-2 rounded-xl bg-brand py-2.5 px-6 text-sm font-semibold text-text-inverse hover:bg-brand-hover transition-colors'
 							style={{ boxShadow: "var(--shadow-brand)" }}
 						>
 							<FiRefreshCw className='w-4 h-4' />

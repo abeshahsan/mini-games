@@ -17,7 +17,7 @@ export function Card({ card, isMyTurn, isProcessing, handleCardClick }: CardProp
 			className={`relative aspect-square cursor-pointer transition-all duration-500 transform-3d ${card.isFlipped || card.isMatched ? "rotate-y-180" : ""} ${canInteract ? "hover:scale-105 hover:shadow-lg" : ""} ${!isMyTurn || isProcessing ? "pointer-events-none" : ""}`}
 		>
 			{/* Card Face-down (back design) */}
-			<div className='absolute inset-0 rounded-xl shadow-md overflow-hidden backface-hidden hover:border-[var(--brand)]/30 transition-colors'>
+			<div className='absolute inset-0 rounded-xl shadow-md overflow-hidden backface-hidden transition-colors'>
 				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
 					src="/assets/cards/card-back-200x280.webp"
@@ -27,15 +27,17 @@ export function Card({ card, isMyTurn, isProcessing, handleCardClick }: CardProp
 				/>
 			</div>
 
-			{/* Card Face-up (word) */}
+			{/* Card Face-up (image) */}
 			<div
-				className={`absolute inset-0 rounded-xl shadow-lg flex items-center justify-center p-2 backface-hidden rotate-y-180 ${card.isMatched ? "bg-[var(--success-muted)] border-[var(--success)]" : "bg-[var(--surface)] border-[var(--brand)]"} border-2`}
+				className={`absolute inset-0 rounded-xl shadow-lg overflow-hidden backface-hidden rotate-y-180 ${card.isMatched ? "ring-2 ring-success" : "ring-2 ring-brand"}`}
 			>
-				<span
-					className={`font-bold text-center wrap-break-word ${card.isMatched ? "text-[var(--success)]" : "text-[var(--text-primary)]"} ${card.word.length > 8 ? "text-xs italic" : "text-sm sm:text-base"}`}
-				>
-					{card.word}
-				</span>
+				{/* eslint-disable-next-line @next/next/no-img-element */}
+				<img
+					src={card.image}
+					alt={card.word}
+					className="h-full w-full object-cover rounded-xl"
+					draggable={false}
+				/>
 
 				{/* Matched overlay */}
 				{card.isMatched && (
