@@ -10,12 +10,15 @@ export default function NewGamePage() {
 
 	useEffect(() => {
 		let isMounted = true;
+		const abortController = new AbortController();
 
 		async function createGame() {
 			try {
+				// StrictMode in development causes double render - AbortController prevents duplicate API calls
 				const response = await fetch("/api/games/memory-match/new-game", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
+					signal: abortController.signal,
 				});
 
 				if (!response.ok) {
@@ -30,6 +33,9 @@ export default function NewGamePage() {
 					throw new Error("Game ID was not returned from the server.");
 				}
 			} catch (err: any) {
+				// Ignore abort errors (expected in StrictMode)
+				if (err.name === "AbortError") return;
+				
 				if (isMounted) {
 					setError(err.message || "An unexpected error occurred.");
 				}
@@ -40,6 +46,7 @@ export default function NewGamePage() {
 
 		return () => {
 			isMounted = false;
+			abortController.abort();
 		};
 	}, [router]);
 

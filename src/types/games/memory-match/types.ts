@@ -22,3 +22,15 @@ export interface MemoryMatchGameRoom {
 	hostId: string;
 	createdAt: number;
 }
+
+export interface PlayerStats {
+	wins: number;
+	losses: number;
+	draws: number;
+	gamesPlayed: number;
+}
+
+export interface PlayerMatchup {
+	player1Id: string;
+	player2Id: string;
+}

@@ -1,4 +1,5 @@
 import { MemoryMatchPlayer, Gamer } from "@/types";
+import { PlayerStatsDisplay } from "./player-stats";
 
 const MEDAL_ICONS = [
 	"/assets/ui/medals/medal-gold-64.png",
@@ -8,7 +9,7 @@ const MEDAL_ICONS = [
 
 export function FinalScores({ players, gamer }: { players: MemoryMatchPlayer[]; gamer: Gamer }) {
 	return (
-		<div className='mb-4 space-y-2'>
+		<div className='mb-4 space-y-3'>
 			{players
 				.sort((a, b) => b.score - a.score)
 				.map((player, index) => {
@@ -21,25 +22,30 @@ export function FinalScores({ players, gamer }: { players: MemoryMatchPlayer[]; 
 							key={player.id}
 							className={`p-3 rounded-lg ${
 								isWinner
-									? "bg-[var(--warning-muted)] border-2 border-[var(--warning)]/50"
-									: "bg-[var(--bg-tertiary)] border border-[var(--surface-border)]"
+									? "bg-warning-muted border-2 border-warning/50"
+									: "bg-bg-tertiary border border-surface-border"
 							}`}
 						>
 							<div className='flex justify-between items-center'>
-								<span className='font-semibold text-[var(--text-primary)] inline-flex items-center gap-2'>
+								<span className='font-semibold text-text-primary inline-flex items-center gap-2'>
 									{medalSrc && (
 										/* eslint-disable-next-line @next/next/no-img-element */
 										<img src={medalSrc} alt={`#${index + 1}`} className='w-6 h-6' />
 									)}
 									{player.username} {isMe && "(You)"}
 								</span>
-								<span className='font-bold text-lg text-[var(--brand-text)]'>
+								<span className='font-bold text-lg text-brand-text'>
 									{player.score} {player.score === 1 ? "match" : "matches"}
 								</span>
 							</div>
 						</div>
 					);
 				})}
+			
+			{/* Show stats if there are exactly 2 players */}
+			{players.length === 2 && (
+				<PlayerStatsDisplay player1Id={players[0].id} player2Id={players[1].id} />
+			)}
 		</div>
 	);
 }

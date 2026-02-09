@@ -1,5 +1,5 @@
 import { pusher } from "@/lib/pusher";
-import { getGame, updateGame } from "@/lib/game-store";
+import { getGame, updateGame, updatePlayerStats } from "@/lib/game-store";
 
 export async function POST(request: Request) {
 	const { gameId, cardId, userId } = await request.json();
@@ -54,6 +54,13 @@ export async function POST(request: Request) {
 
 			if (game.cards.every((c) => c.isMatched)) {
 				game.status = "completed";
+				
+				// Update player stats
+				if (game.players.length === 2) {
+					const [p1, p2] = game.players;
+					const winner = p1.score > p2.score ? p1.id : p2.score > p1.score ? p2.id : null;
+					await updatePlayerStats(winner, p1.id, p2.id);
+				}
 			}
 		} else {
 			// No match - flip cards back and switch turn

@@ -37,6 +37,8 @@ export function useSetUpPusherClient() {
 			"card-flipped",
 			(data: { cardId: number; userId: string; game: MemoryMatchGameRoom }) => {
 				setGameRoom(data.game);
+				// Clear processing flag after first card flip
+				setIsProcessing(false);
 			},
 		);
 

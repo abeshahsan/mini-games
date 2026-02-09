@@ -17,10 +17,14 @@ interface MemoryMatchGameState {
 	setError: (error: string | null) => void;
 	resetGame: () => void;
 
+	// Optimistic update actions
+	optimisticFlipCard: (cardId: number) => void;
+	rollbackOptimisticFlip: (previousState: MemoryMatchGameRoom) => void;
+
 	// Card-level helpers (kept from original)
 	cards: MemoryMatchCard[] | null;
 	updateCards: (updatedCards: MemoryMatchCard[]) => void;
-	sendMove: (cardId: number, gameId: string, userId: string) => Promise<void>;
+	sendMove: (cardId: number, gameId: string, userId: string) => Promise<boolean>;
 }
 
 export const useMemoryMatchGameStore = create<MemoryMatchGameState>((set) => ({
@@ -47,6 +51,27 @@ export const useMemoryMatchGameStore = create<MemoryMatchGameState>((set) => ({
 			cards: null,
 		}),
 
+	// Optimistic update actions
+	optimisticFlipCard: (cardId) =>
+		set((state) => {
+			if (!state.gameRoom) return state;
+			
+			const newCards = [...state.gameRoom.cards];
+			newCards[cardId] = { ...newCards[cardId], isFlipped: true };
+			
+			return {
+				gameRoom: { ...state.gameRoom, cards: newCards },
+				cards: newCards,
+			};
+		}),
+
+	rollbackOptimisticFlip: (previousState) =>
+		set({
+			gameRoom: previousState,
+			cards: previousState.cards,
+			isProcessing: false,
+		}),
+
 	// Card-level helpers (kept from original)
 	cards: null,
 	updateCards: (updatedCards) => set({ cards: updatedCards }),
@@ -57,13 +82,18 @@ export const useMemoryMatchGameStore = create<MemoryMatchGameState>((set) => ({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ cardId, gameId, userId }),
 			});
+			
 			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+				throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
 			}
-		} catch (e) {
+			
+			return true;
+		} catch (e: any) {
 			console.error("Error in sendMove:", e);
-			set({ error: "Failed to make move" });
-			setTimeout(() => set({ error: null }), 2000);
+			set({ error: e.message || "Failed to make move" });
+			setTimeout(() => set({ error: null }), 3000);
+			return false;
 		}
 	},
 }));

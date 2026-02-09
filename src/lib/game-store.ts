@@ -1,12 +1,15 @@
-import { MemoryMatchGameRoom } from "@/types";
+import { MemoryMatchGameRoom, PlayerStats } from "@/types";
 import { redisInstance } from "./redis";
 
 // Redis-backed game store for multiplayer state
 // Games are stored with key pattern: game:memory-match:{gameId}
+// Player stats are stored with key pattern: player-stats:{player1Id}:{player2Id}
 // TTL is set to 2 hours for automatic cleanup
 
 const GAME_KEY_PREFIX = "game:memory-match:";
+const STATS_KEY_PREFIX = "player-stats:";
 const GAME_TTL = 60 * 60 * 2; // 2 hours in seconds
+const STATS_TTL = 60 * 60 * 8; // 8 hours for stats (longer than games)
 
 function getGameKey(gameId: string): string {
 	return `${GAME_KEY_PREFIX}${gameId}`;
@@ -116,3 +119,52 @@ export async function cleanupOldGames(): Promise<void> {
 
 // Run cleanup every 30 minutes (Redis TTL is primary cleanup mechanism)
 setInterval(cleanupOldGames, 30 * 60 * 1000);
+
+// ═══════════════════════════════════════════════════════════════
+// Player Stats Management
+// ═══════════════════════════════════════════════════════════════
+
+function getStatsKey(player1Id: string, player2Id: string): string {
+	// Sort IDs to ensure consistent key regardless of order
+	const [p1, p2] = [player1Id, player2Id].sort();
+	return `${STATS_KEY_PREFIX}${p1}:${p2}`;
+}
+
+export async function getPlayerStats(player1Id: string, player2Id: string): Promise<PlayerStats> {
+	const key = getStatsKey(player1Id, player2Id);
+	const data = await redisInstance.get(key);
+	
+	if (!data) {
+		// Return default stats if none exist
+		return { wins: 0, losses: 0, draws: 0, gamesPlayed: 0 };
+	}
+	
+	return JSON.parse(data as string) as PlayerStats;
+}
+
+export async function updatePlayerStats(
+	winnerId: string | null,
+	player1Id: string,
+	player2Id: string
+): Promise<void> {
+	const key = getStatsKey(player1Id, player2Id);
+	const stats = await getPlayerStats(player1Id, player2Id);
+	
+	stats.gamesPlayed++;
+	
+	if (winnerId === null) {
+		// Draw
+		stats.draws++;
+	} else {
+		// Note: wins/losses are from player1's perspective
+		const [sortedP1] = [player1Id, player2Id].sort();
+		if (winnerId === sortedP1) {
+			stats.wins++;
+		} else {
+			stats.losses++;
+		}
+	}
+	
+	await redisInstance.set(key, JSON.stringify(stats), "EX", STATS_TTL);
+	console.log("[Game Store] Player stats updated:", key, stats);
+}
