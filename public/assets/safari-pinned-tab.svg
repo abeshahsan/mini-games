@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Safari pinned tab: single color, black, no gradients -->
+  <g transform="translate(256,240) rotate(-12)">
+    <rect x="-85" y="-100" width="130" height="170" rx="16" fill="black"/>
+  </g>
+  <g transform="translate(256,240) rotate(12)">
+    <rect x="-45" y="-100" width="130" height="170" rx="16" fill="black"/>
+  </g>
+  <circle cx="256" cy="220" r="28" fill="black"/>
+</svg>
