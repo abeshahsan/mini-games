@@ -8,12 +8,14 @@ export default function proxy(req: NextRequest) {
 
 	console.log("Middleware - UID:", uid, "Username:", username);
 
-	// ignore favicon and static assets
+	// ignore favicon, manifest, static assets, next internals, and API routes
 	if (
-		req.nextUrl.pathname.startsWith("/favicon.ico") ||
-		req.nextUrl.pathname.startsWith("/assets/") ||
-		req.nextUrl.pathname.startsWith("/_next/static/") ||
-		req.nextUrl.pathname.startsWith("/_next/image/")
+		req.nextUrl.pathname.startsWith("/api") ||
+		req.nextUrl.pathname.startsWith("/_next/static") ||
+		req.nextUrl.pathname.startsWith("/_next/image") ||
+		req.nextUrl.pathname.startsWith("/assets") ||
+		req.nextUrl.pathname === "/favicon.ico" ||
+		req.nextUrl.pathname === "/manifest.json"
 	) {
 		return NextResponse.next();
 	}
